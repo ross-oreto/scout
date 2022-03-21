@@ -41,6 +41,34 @@ public class Expression<T> {
         }
     }
 
+    static Path<?> toPath(Path<?> root, String key) {
+        Path<?> path = root;
+        String field = null;
+        if (Str.isEmpty(key))
+            return path;
+        if (key.contains(".")) {
+            String[] fields = key.split("\\.");
+            key = fields[0];
+            field = fields.length > 1 ? fields[1] : null;
+        }
+        path = path.get(key);
+        String name = path.getClass().getName();
+        if (name.contains("SingularAttribute")) {
+            return field == null ? path : path.get(field);
+        }
+        if (path.getJavaType() == Map.class) {
+            path = root instanceof Root ? ((Root<?>)root).joinMap(key) : ((Join<?,?>)root).joinMap(key);
+            if ("key".equals(field)) {
+                path = ((MapJoin<?, ?, ?>) path).key();
+            } else if ("value".equals(field)) {
+                path = ((MapJoin<?, ?, ?>) path).value();
+            }
+        } else if (path.getJavaType() == List.class) {
+            path = root instanceof Root ? ((Root<?>)root).joinList(key) : ((Join<?,?>)root).joinList(key);
+        }
+        return path;
+    }
+
     public enum Function {
         count(true)
         , avg(true)
@@ -157,42 +185,14 @@ public class Expression<T> {
             throw new BadQueryException(String.format("%s is not a valid function", func));
     }
 
-    public boolean isAggregate() {
+    protected boolean isAggregate() {
         boolean f1Aggregate = Objects.nonNull(f1) && f1.isAggregate();
         boolean f2Aggregate = Objects.nonNull(f2) && f2.isAggregate();
         return f1Aggregate || f2Aggregate;
     }
 
-    static Path<?> toPath(Path<?> root, String key) {
-        Path<?> path = root;
-        String field = null;
-        if (Str.isEmpty(key))
-            return path;
-        if (key.contains(".")) {
-             String[] fields = key.split("\\.");
-             key = fields[0];
-             field = fields.length > 1 ? fields[1] : null;
-        }
-        path = path.get(key);
-        String name = path.getClass().getName();
-        if (name.contains("SingularAttribute")) {
-            return field == null ? path : path.get(field);
-        }
-        if (path.getJavaType() == Map.class) {
-            path = root instanceof Root ? ((Root<?>)root).joinMap(key) : ((Join<?,?>)root).joinMap(key);
-            if ("key".equals(field)) {
-                path = ((MapJoin<?, ?, ?>) path).key();
-            } else if ("value".equals(field)) {
-                path = ((MapJoin<?, ?, ?>) path).value();
-            }
-        } else if (path.getJavaType() == List.class) {
-            path = root instanceof Root ? ((Root<?>)root).joinList(key) : ((Join<?,?>)root).joinList(key);
-        }
-        return path;
-    }
-
     @SuppressWarnings({"unchecked", "rawtypes"})
-    public Predicate apply(DSL<T> dsl) {
+    protected Predicate apply(DSL<T> dsl) {
         Path<?> root = dsl.root;
         CriteriaBuilder cb = dsl.criteriaBuilder;
         Predicate predicate;
@@ -329,7 +329,7 @@ public class Expression<T> {
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
-    public javax.persistence.criteria.Expression<?> applyFunction(Function function, Path path, CriteriaBuilder cb) {
+    protected javax.persistence.criteria.Expression<?> applyFunction(Function function, Path path, CriteriaBuilder cb) {
         if (function == Function.count) {
             return cb.count(path);
         } else if (function == Function.avg) {

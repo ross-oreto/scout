@@ -5,12 +5,12 @@ import javax.persistence.criteria.Predicate;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Predicates {
-    public Predicate where;
-    public Predicate having;
-    public List<Expression<?>> grouping = new ArrayList<>();
+class Predicates {
+    Predicate where;
+    Predicate having;
+    List<Expression<?>> grouping = new ArrayList<>();
 
-    public Expression<?>[] groupBy() {
+    Expression<?>[] groupBy() {
         return grouping.stream().distinct().toArray(Expression[]::new);
     }
 }

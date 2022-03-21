@@ -320,7 +320,7 @@ class Str implements CharSequence {
      * Determine if the string is null or empty
      * @return True if the string is null or empty, false otherwise
      */
-    boolean isEmpty() {
+    public boolean isEmpty() {
         return isEmpty(this);
     }
 

@@ -4,7 +4,7 @@ import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.Predicate;
 import java.util.Stack;
 
-class Logical {
+public class Logical {
     public enum Operator {
         and, or, not
     }
@@ -18,7 +18,7 @@ class Logical {
         return false;
     }
 
-    public static Predicate apply(Operator operator, CriteriaBuilder builder, Predicate... predicates) {
+    static Predicate apply(Operator operator, CriteriaBuilder builder, Predicate... predicates) {
         Predicate predicate = null;
         switch (operator) {
             case and:
@@ -37,11 +37,11 @@ class Logical {
         return predicate;
     }
 
-    public static Predicate apply(String operator, CriteriaBuilder builder, Predicate... predicates) {
+    static Predicate apply(String operator, CriteriaBuilder builder, Predicate... predicates) {
         return apply(Operator.valueOf(operator), builder, predicates);
     }
 
-    public static Predicate apply(Predicate predicate, Stack<String> operator, CriteriaBuilder builder, Predicate p) {
+    static Predicate apply(Predicate predicate, Stack<String> operator, CriteriaBuilder builder, Predicate p) {
         return operator.isEmpty() || predicate == null
                 ? p
                 : Logical.apply(operator.pop(), builder, predicate, p);
