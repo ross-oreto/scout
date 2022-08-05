@@ -125,6 +125,15 @@ public class TestData {
                                 .addItem(new Item().withName("Snake"))
                 )
         );
+        em.persist(
+                new Person()
+                        .withAddress(new Address().withLine("Schenectady, New York"))
+                        .withName("Otto Octavius").addNickName("Doc Ock").addNickName("Doctor Octopus").addOrder(
+                                new Order().withAmount(30.02).withShipping(100.00).addItem(new Item().withName("Water"))
+                        ).addOrder(
+                                new Order().withAmount(40.02).withShipping(120.00).addItem(new Item().withName("Salt Water"))
+                        )
+        );
     }
 
     public static void setupVehicles(EntityManager em) {

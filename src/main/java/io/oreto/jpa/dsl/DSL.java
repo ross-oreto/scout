@@ -386,7 +386,8 @@ public class DSL<T> {
         DSL<?> subDSL = new DSL<>(q, i + 1, join, root, subQuery, cb);
         parsePredicates(predicates(subDSL), subRoot, subQuery);
         subQuery.select(cb.literal(1));
-        subQuery.groupBy(groups);
+        if (!groups.isEmpty())
+            subQuery.groupBy(groups);
 
         predicates.where = Logical.apply(predicates.where, logical, cb, cb.exists(subQuery));
         i = subDSL.i;

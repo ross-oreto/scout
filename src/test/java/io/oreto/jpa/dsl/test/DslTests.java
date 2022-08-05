@@ -22,7 +22,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DataJpaTest(showSql = true)
 @EnableJpaRepositories(repositoryFactoryBeanClass = JpaSpecRepositoryFactoryBean.class)
@@ -30,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @ContextConfiguration
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
-public class DslTest {
+public class DslTests {
 
     @Resource
     private EntityManagerFactory entityManagerFactory;
@@ -63,6 +64,20 @@ public class DslTest {
                 em.createQuery(DSL.criteriaQuery(em, Person.class, "", "nickNames", "address")).getResultList()
                 , em.createQuery(DSL.criteriaQuery(em, Person.class, null, "nickNames", "address")).getResultList()
         );
+        Optional<Person> person = em.createQuery(DSL.criteriaQuery(em, Person.class, "id:1")).getResultStream().findFirst();
+        assertTrue(person.isPresent());
+    }
+
+    @Test
+    public void simpleAndOr() {
+        assertEquals(
+                1
+                , personRepo.queryAll("name::icontains:ross address{ line::icontains:Nashville }").size()
+        );
+        assertEquals(
+                2
+                , personRepo.queryAll("name::icontains:ross or name::icontains:Bilbo").size()
+        );
     }
 
     @Test
@@ -78,6 +93,10 @@ public class DslTest {
         assertEquals(
                 1
                 , personRepo.queryAll("nickNames:'Ross Sea'").size()
+        );
+        assertEquals(
+                3
+                , personRepo.queryAll("nickNames::in:['Doc Ock', 'The Half Blood Prince', 'Voldamort']").size()
         );
         assertEquals(
                 3
@@ -119,7 +138,7 @@ public class DslTest {
 
     @Test
     public void findHedwig() {
-        Optional<Person> person = personRepo.queryOne("orders{ items { name::in:['Hedwig'] }}");
+        Optional<Person> person = personRepo.queryOne("orders{ items { name:'Hedwig' }}");
         assertTrue(person.isPresent());
         assertEquals("Harry Potter", person.get().getName());
     }
@@ -187,38 +206,8 @@ public class DslTest {
 
     @Test
     public void highShipping() {
-        List<Person> people = personRepo.queryAll("orders{ sum(shipping)::gt:100 }");
-        assertEquals(1, people.size());
+        assertEquals(2, personRepo.queryAll("orders{ sum(shipping)::gt:100 }").size());
+        assertEquals("Otto Octavius"
+                , personRepo.queryOne("orders{ sum(shipping)::gt:sum(@amount) }").map(Person::getName).orElse(null));
     }
-
-//    public void _peopleWithForgedItems() {
-//        CriteriaBuilder cb = em.getCriteriaBuilder();
-//
-//        CriteriaQuery<Person> personQuery = cb.createQuery(Person.class);
-//        Root<Person> person = personQuery.from(Person.class);
-//
-//        Subquery<Order> personOrderQuery = personQuery.subquery(Order.class);
-//        Root<Person> personOrder = personOrderQuery.correlate(person);
-//        Join<Person, Order> orders = personOrder.join("orders");
-//
-//        Subquery<Item> itemSubQuery = personOrderQuery.subquery(Item.class);
-//        Join<Person, Order> orderItemRoot = itemSubQuery.correlate(orders);
-//        Join<Order, Item> orderItemJoin = orderItemRoot.join("items");
-//        itemSubQuery.select(orderItemJoin)
-//                .where(cb.equal(orderItemJoin.joinMap("attributes"), "forged"));
-//
-//        personOrderQuery.select(orders)
-//                .where(
-////                        cb.equal(cb.literal(200.01), orders.get("amount"))
-//                        cb.exists(itemSubQuery)
-//                );
-//
-//        personQuery.where(cb.exists(personOrderQuery));
-//
-//        List<Person> people = em.createQuery(personQuery).getResultList();
-//        assertEquals(2, people.size());
-//        people.forEach(p -> p.getOrders().forEach(o -> assertTrue(o.getItems().stream()
-//                        .anyMatch(item1 -> "forged".equals(item1.getAttributes().get("type"))))
-//        ));
-//    }
 }
